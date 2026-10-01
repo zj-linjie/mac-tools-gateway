@@ -20,7 +20,7 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
    - 密钥是机密：不要写进会提交的文件、不要在对话里复述全文
 3. **验证连通**：连接后调用一次 `now_playing`，能返回那台 Mac 的播放状态即接入成功。
 
-## 工具清单（25 个）
+## 工具清单（26 个）
 
 | 工具 | 作用 | 调用要点 |
 |---|---|---|
@@ -34,8 +34,9 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 | `music_play_pause` | 暂停/继续 | **必须传 action**：`"pause"`/`"play"`，不确定才用默认 `"auto"`；返回话术是真实状态，不要脑补 |
 | `music_next` / `music_previous` | 切歌 | 返回里带当前曲目与播放状态 |
 | `now_playing` | 查正在播放的歌 | 用户问"放的什么歌"时先调它，别猜 |
-| `generate_image` | AI 文生图（moyuu 中转站，gpt-image-2 模型，默认 3840x2160） | `prompt` 填具体画面描述；单张 20-55 秒；成功返回保存路径/尺寸/耗时/相册地址/**相册访问密码**；用 `GET <网关>/img/<文件名>`（同一密钥）取回图片字节 |
-| `edit_image` | AI 图生图：以参考图为底按描述改图 | `image_path` 填那台 Mac 上的图片路径——远端先用 `POST <网关>/upload` 上传手机图（Bearer 密钥，body 为原始图片字节），或用已生成图（如 `xiaozhi-mcp/generated/img_xxx.png`）串"生成→改图"链路；其余同上 |
+| `generate_image` | AI 文生图（两步确认制，防误扣费）：只登记请求返回确认码，不扣费 | `prompt` 填具体画面描述；默认 3840x2160；**把结果给用户确认后**用 `confirm_image` 执行；成功返回保存路径/尺寸/耗时/相册地址/**相册访问密码**；用 `GET <网关>/img/<文件名>`（同一密钥）取回图片字节 |
+| `edit_image` | AI 图生图（两步确认制）：以参考图为底按描述改图，登记同上 | `image_path` 填那台 Mac 上的图片路径——远端先用 `POST <网关>/upload` 上传手机图（Bearer 密钥，body 为原始图片字节），或用已生成图（如 `xiaozhi-mcp/generated/img_xxx.png`）串"生成→改图"链路 |
+| `confirm_image` | 持确认码实际执行待确认的生图/改图 | 只在用户明确确认后调用（这一步才计费）；确认码 2 分钟有效、单次；每日实际生成上限 10 次（IMAGE_DAILY_LIMIT 可调） |
 | `list_images` | 列相册现有图（生成+上传），按时间倒序 | "看看相册里有什么图/刚传的图叫什么"先调它；拿到 `generated/<文件名>` 直接当 `edit_image` 的 `image_path` |
 
 ## Home Assistant 工具（11 个 `ha_*`）
@@ -44,6 +45,7 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 
 ## 生图与图片回传
 
+- **两步确认**：`generate_image`/`edit_image` 首次调用只登记返回确认码（不扣费）；把结果给用户确认后调 `confirm_image(确认码)` 才实际执行。机主说「确认生成」即视为确认。
 - **手机图传入**：`POST <网关地址去掉/mcp>/upload`，Bearer 密钥鉴权，请求体为原始图片字节（PNG/JPG/WebP，≤30MB，iPhone HEIC 原图需先转 JPG），如 `curl --data-binary @照片.jpg -H "Authorization: Bearer <密钥>" <网关>/upload`，返回 `{"ok":true,"file":"generated/up_xxx.png"}`——这个 `file` 直接填进 `edit_image` 的 `image_path`。机主手机也可以不开 harness，直接开相册网页点「＋ 上传图片」。
 - `generate_image` / `edit_image` 成功后，返回文本里的 `xiaozhi-mcp/generated/img_xxx.png` 是那台 Mac 上的仓库相对路径；远端取图用 `GET <网关地址去掉/mcp>/img/<文件名>`，带同一把密钥（Bearer 或 `?key=`）。返回文本还带 `相册地址`（http://相册域名占位:5173，机主本地公网域名）。
 - **每次生成成功都会轮换「相册密码」**（返回文本里带的 `相册访问密码: <32位hex>`）：那是机主相册网页（http://相册域名占位:5173）的最新登录密码，旧密码随即作废；生图失败不轮换。转述给机主即可，不要当自己的凭据用。
