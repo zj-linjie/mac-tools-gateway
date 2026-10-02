@@ -43,6 +43,13 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 
 `ha_list_devices` / `ha_light` / `ha_switch` / `ha_cover` / `ha_climate` / `ha_media_player` / `ha_where_is` / `ha_activate_scene` / `ha_run_script` / `ha_get_state` / `ha_call_service`——逐个工具的语义与话术见机主仓库 `xiaozhi-mcp/README.md` 的 homeassistant_tools 一节。控制的是真实家居设备，用户明确要求才调用。
 
+**ha_climate 2026-10-02 升级（格力红外空调）**：action 支持 on（开机）/ off（关机）/ mode（切模式）/ fan（调风速）。
+- action=mode 配 `hvac_mode=cool/heat/dry/fan_only/auto`（中文「制冷/制热/除湿/送风/自动」也直接收，off 等于关机）
+- action=fan 配 `fan_step=up/down`（这台只有相对升降档，没有低中高，不要传 low/medium/high）
+- 只调温度就不填 action，传 `temperature`（摄氏度，超 16–30 自动钳到边界并在回复里说明）；「空调」「格力空调」都能命中实体
+- 红外单向下发：读不到室温（ha_get_state 对它会回「读不到室温（红外控制）」），遥控器直改不会同步到 HA
+- 示例：「空调制冷」→ action=mode, hvac_mode=cool；「空调调到制热」→ action=mode, hvac_mode=heat；「风速大一点」→ action=fan, fan_step=up；「调到26度」→ temperature=26
+
 ## 生图与图片回传
 
 - **两步确认**：`generate_image`/`edit_image` 首次调用只登记返回确认码（不扣费）；把结果给用户确认后调 `confirm_image(确认码)` 才实际执行。机主说「确认生成」即视为确认。
