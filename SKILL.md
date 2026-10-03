@@ -50,6 +50,8 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 - 红外单向下发：读不到室温（ha_get_state 对它会回「读不到室温（红外控制）」），遥控器直改不会同步到 HA
 - 示例：「空调制冷」→ action=mode, hvac_mode=cool；「空调调到制热」→ action=mode, hvac_mode=heat；「风速大一点」→ action=fan, fan_step=up；「调到26度」→ temperature=26
 
+**货架开关（2026-10-03 新增，Matter）**：实体 `switch.quectel_matter_product_2`，别名「货架」「货架开关」已锚定——ha_switch 控开关、ha_get_state 查状态。家里另有一个同名 select 辅助实体（「启动时的开机行为」，是开机动作选项不是开关），用别名调用不会误命中，别对它下发控制。
+
 ## 生图与图片回传
 
 - **两步确认**：`generate_image`/`edit_image` 首次调用只登记返回确认码（不扣费）；把结果给用户确认后调 `confirm_image(确认码)` 才实际执行。机主说「确认生成」即视为确认。
