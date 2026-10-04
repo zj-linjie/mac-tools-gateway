@@ -62,8 +62,8 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 
 - **两步确认**：`generate_image`/`edit_image` 首次调用只登记返回确认码（不扣费）；把结果给用户确认后调 `confirm_image(确认码)` 才实际执行。机主说「确认生成」即视为确认。
 - **手机图传入**：`POST <网关地址去掉/mcp>/upload`，Bearer 密钥鉴权，请求体为原始图片字节（PNG/JPG/WebP，≤30MB，iPhone HEIC 原图需先转 JPG），如 `curl --data-binary @照片.jpg -H "Authorization: Bearer <密钥>" <网关>/upload`，返回 `{"ok":true,"file":"generated/up_xxx.png"}`——这个 `file` 直接填进 `edit_image` 的 `image_path`。机主手机也可以不开 harness，直接开相册网页点「＋ 上传图片」。
-- `generate_image` / `edit_image` 成功后，返回文本里的 `xiaozhi-mcp/generated/img_xxx.png` 是那台 Mac 上的仓库相对路径；远端取图用 `GET <网关地址去掉/mcp>/img/<文件名>`，带同一把密钥（Bearer 或 `?key=`）。返回文本还带 `相册地址`（http://相册域名占位:5173，机主本地公网域名）。
-- **每次生成成功都会轮换「相册密码」**（返回文本里带的 `相册访问密码: <32位hex>`）：那是机主相册网页（http://相册域名占位:5173）的最新登录密码，旧密码随即作废；生图失败不轮换。转述给机主即可，不要当自己的凭据用。
+- `generate_image` / `edit_image` 成功后，返回文本里的 `xiaozhi-mcp/generated/img_xxx.png` 是那台 Mac 上的仓库相对路径；远端取图用 `GET <网关地址去掉/mcp>/img/<文件名>`，带同一把密钥（Bearer 或 `?key=`）。返回文本还带 `相册地址`（机主本地公网域名，以工具返回文本为准）。
+- **每次生成成功都会轮换「相册密码」**（返回文本里带 `相册访问密码: …` 一行）：那是机主相册网页（地址见返回文本里的 `相册地址`）的最新登录密码，旧密码随即作废；生图失败不轮换。转述给机主即可，不要当自己的凭据用。
 - 生图通道偶发瞬时故障（错误文本含 `transient，生成通道抖动`）：这是中转站侧抖动，稍后原样重试通常可过；含 `deterministic` 的失败重试无用。
 
 ## 行为边界
