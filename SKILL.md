@@ -1,6 +1,6 @@
 ---
 name: mac-tools-gateway
-description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服务），用 MCP 工具控制那台 Mac：开应用、点网易云音乐、检索打开 Obsidian 知识库、控制 Home Assistant 智能家、AI 生图（文生图/图生图）。适用场景是拿到网关 URL 和密钥后完成 MCP 客户端配置并验证连通。
+description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服务），用 MCP 工具控制那台 Mac：开应用、开斗鱼/虎牙/B站这类视频网站、点网易云音乐、检索打开 Obsidian 知识库、控制 Home Assistant 智能家、AI 生图（文生图/图生图）。适用场景是拿到网关 URL 和密钥后完成 MCP 客户端配置并验证连通。
 ---
 
 # Mac 工具网关接入
@@ -20,11 +20,12 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
    - 密钥是机密：不要写进会提交的文件、不要在对话里复述全文
 3. **验证连通**：连接后调用一次 `now_playing`，能返回那台 Mac 的播放状态即接入成功。
 
-## 工具清单（27 个）
+## 工具清单（28 个）
 
 | 工具 | 作用 | 调用要点 |
 |---|---|---|
 | `open_app` | 打开/聚焦 Mac 应用 | 支持中文名与模糊匹配；没装时会返回候选列表，**不要猜着重试** |
+| `open_website` | 默认浏览器打开网站首页 | 收录：斗鱼（douyu.com）、虎牙（huya.com）、B站（bilibili.com），「斗鱼直播」「哔哩哔哩」这类口语别名都收；也可直接传网址（`www.douyu.com` 或 `https://…`，裸域名自动补 https）；没收录的站返回候选列表，**不要猜着重试** |
 | `search_obsidian_notes` | 关键词检索 Obsidian 知识库 | 返回笔记标题+路径+摘要 |
 | `open_note_in_obsidian` | 打开最匹配的笔记并聚焦 | 配合上面的搜索结果使用 |
 | `open_obsidian_search` | 打开 Obsidian 搜索面板 | 让用户自己挑结果时用 |
