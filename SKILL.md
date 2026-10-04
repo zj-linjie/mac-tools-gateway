@@ -20,7 +20,7 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
    - 密钥是机密：不要写进会提交的文件、不要在对话里复述全文
 3. **验证连通**：连接后调用一次 `now_playing`，能返回那台 Mac 的播放状态即接入成功。
 
-## 工具清单（26 个）
+## 工具清单（27 个）
 
 | 工具 | 作用 | 调用要点 |
 |---|---|---|
@@ -39,9 +39,9 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 | `confirm_image` | 持确认码实际执行待确认的生图/改图 | 只在用户明确确认后调用（这一步才计费）；确认码 2 分钟有效、单次；每日实际生成上限 10 次（IMAGE_DAILY_LIMIT 可调） |
 | `list_images` | 列相册现有图（生成+上传），按时间倒序 | "看看相册里有什么图/刚传的图叫什么"先调它；拿到 `generated/<文件名>` 直接当 `edit_image` 的 `image_path` |
 
-## Home Assistant 工具（11 个 `ha_*`）
+## Home Assistant 工具（12 个 `ha_*`）
 
-`ha_list_devices` / `ha_light` / `ha_switch` / `ha_cover` / `ha_climate` / `ha_media_player` / `ha_where_is` / `ha_activate_scene` / `ha_run_script` / `ha_get_state` / `ha_call_service`——逐个工具的语义与话术见机主仓库 `xiaozhi-mcp/README.md` 的 homeassistant_tools 一节。控制的是真实家居设备，用户明确要求才调用。
+`ha_list_devices` / `ha_light` / `ha_switch` / `ha_cover` / `ha_climate` / `ha_media_player` / `ha_where_is` / `ha_parking` / `ha_activate_scene` / `ha_run_script` / `ha_get_state` / `ha_call_service`——逐个工具的语义与话术见机主仓库 `xiaozhi-mcp/README.md` 的 homeassistant_tools 一节。控制的是真实家居设备，用户明确要求才调用。
 
 **ha_climate 2026-10-02 升级（格力红外空调）**：action 支持 on（开机）/ off（关机）/ mode（切模式）/ fan（调风速）。
 - action=mode 配 `hvac_mode=cool/heat/dry/fan_only/auto`（中文「制冷/制热/除湿/送风/自动」也直接收，off 等于关机）
@@ -51,6 +51,11 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 - 示例：「空调制冷」→ action=mode, hvac_mode=cool；「空调调到制热」→ action=mode, hvac_mode=heat；「风速大一点」→ action=fan, fan_step=up；「调到26度」→ temperature=26
 
 **货架开关（2026-10-03 新增，Matter）**：实体 `switch.quectel_matter_product_2`，别名「货架」「货架开关」已锚定——ha_switch 控开关、ha_get_state 查状态。家里另有一个同名 select 辅助实体（「启动时的开机行为」，是开机动作选项不是开关），用别名调用不会误命中，别对它下发控制。
+
+**ha_parking 车位识别（2026-10-04 新增）**：查「家里有没有车位」——看起居室摄像头（`camera.qijushi`，画面朝楼下停车区）判断固定那格车位：空着 / 被占（尽量带车的颜色）/ 看不清（夜间、雨雾天会如实说看不清，不硬猜）。
+- 无参数即可用；只有要自己看图复核时才传 `with_image=true`：会把当前快照落盘 `generated/cam_时间戳.jpg` 并在回复里给文件名，再用 `GET <网关地址去掉/mcp>/img/cam_xxx.jpg`（同一把密钥）取回图片。语音问答用不着传。
+- 这是车位专用工具，不是通用摄像头工具：想看摄像头画面或家里其他摄像头，不要路由到它（camera 域不在可见白名单，这是唯一的窄例外）。
+- 标定与参考图在 `calibration/parking.json`（机主重标 = 换参考图 + 改 JSON，即时生效，不用重启；结果有 60 秒缓存，改完最多等 1 分钟）。
 
 ## 生图与图片回传
 
