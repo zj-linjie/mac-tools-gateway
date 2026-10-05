@@ -1,6 +1,6 @@
 ---
 name: mac-tools-gateway
-description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服务），用 MCP 工具控制那台 Mac：开应用、开斗鱼/虎牙/B站这类视频网站、点网易云音乐、检索打开 Obsidian 知识库、控制 Home Assistant 智能家、AI 生图（文生图/图生图）。适用场景是拿到网关 URL 和密钥后完成 MCP 客户端配置并验证连通。
+description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服务），用 MCP 工具控制那台 Mac：开应用、开斗鱼/虎牙/B站这类视频网站、点网易云音乐、检索打开 Obsidian 知识库、语音记事进 Obsidian 日记、控制 Home Assistant 智能家、AI 生图（文生图/图生图）。适用场景是拿到网关 URL 和密钥后完成 MCP 客户端配置并验证连通。
 ---
 
 # Mac 工具网关接入
@@ -20,7 +20,7 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
    - 密钥是机密：不要写进会提交的文件、不要在对话里复述全文
 3. **验证连通**：连接后调用一次 `now_playing`，能返回那台 Mac 的播放状态即接入成功。
 
-## 工具清单（28 个）
+## 工具清单（29 个）
 
 | 工具 | 作用 | 调用要点 |
 |---|---|---|
@@ -29,6 +29,7 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 | `search_obsidian_notes` | 关键词检索 Obsidian 知识库 | 返回笔记标题+路径+摘要 |
 | `open_note_in_obsidian` | 打开最匹配的笔记并聚焦 | 配合上面的搜索结果使用 |
 | `open_obsidian_search` | 打开 Obsidian 搜索面板 | 让用户自己挑结果时用 |
+| `save_voice_note` | 把一段话记进 Obsidian 日记：追加 `- HH:MM 时间戳行` 到 Jggknowledge 仓库 `日记/当天日期.md`，可选附录音嵌入 | text 必填（口述正文）；audio_file 可选，传已存进 收件箱/Ios录音 的 m4a 文件名（如 20260913_175210.m4a），日记里会附 `![[文件名]]` 录音嵌入。机主说"记个日记/记一下/语音记事"时调用；Mac 快捷指令「记录日记 esp」走的就是这个工具 |
 | `open_my_github_repositories` | 浏览器打开机主的 GitHub 仓库列表 | — |
 | `play_song` | 点歌播放 | `song_name` 必填，提到歌手就传 `artist`（选曲更准）；周杰伦等版权不在网易云，找不到原唱要如实说 |
 | `play_liked_music` | 播放"我喜欢的音乐"歌单 | 无参数 |
