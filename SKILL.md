@@ -20,7 +20,7 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
    - 密钥是机密：不要写进会提交的文件、不要在对话里复述全文
 3. **验证连通**：连接后调用一次 `now_playing`，能返回那台 Mac 的播放状态即接入成功。
 
-## 工具清单（29 个）
+## 工具清单（30 个）
 
 | 工具 | 作用 | 调用要点 |
 |---|---|---|
@@ -41,9 +41,9 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 | `confirm_image` | 持确认码实际执行待确认的生图/改图 | 只在用户明确确认后调用（这一步才计费）；确认码 2 分钟有效、单次；每日实际生成上限 10 次（IMAGE_DAILY_LIMIT 可调） |
 | `list_images` | 列相册现有图（生成+上传），按时间倒序 | "看看相册里有什么图/刚传的图叫什么"先调它；拿到 `generated/<文件名>` 直接当 `edit_image` 的 `image_path` |
 
-## Home Assistant 工具（12 个 `ha_*`）
+## Home Assistant 工具（13 个 `ha_*`）
 
-`ha_list_devices` / `ha_light` / `ha_switch` / `ha_cover` / `ha_climate` / `ha_media_player` / `ha_where_is` / `ha_parking` / `ha_activate_scene` / `ha_run_script` / `ha_get_state` / `ha_call_service`——逐个工具的语义与话术见机主仓库 `xiaozhi-mcp/README.md` 的 homeassistant_tools 一节。控制的是真实家居设备，用户明确要求才调用。
+`ha_list_devices` / `ha_light` / `ha_switch` / `ha_cover` / `ha_climate` / `ha_media_player` / `ha_where_is` / `ha_parking` / `ha_treadmill` / `ha_activate_scene` / `ha_run_script` / `ha_get_state` / `ha_call_service`——逐个工具的语义与话术见机主仓库 `xiaozhi-mcp/README.md` 的 homeassistant_tools 一节。控制的是真实家居设备，用户明确要求才调用。
 
 **ha_climate 2026-10-02 升级（格力红外空调）**：action 支持 on（开机）/ off（关机）/ mode（切模式）/ fan（调风速）。
 - action=mode 配 `hvac_mode=cool/heat/dry/fan_only/auto`（中文「制冷/制热/除湿/送风/自动」也直接收，off 等于关机）
@@ -57,7 +57,9 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 **ha_parking 车位识别（2026-10-04 新增）**：查「家里有没有车位」——看起居室摄像头（`camera.qijushi`，画面朝楼下停车区）判断固定那格车位：空着 / 被占（尽量带车的颜色）/ 看不清（夜间、雨雾天会如实说看不清，不硬猜）。若回复含「看不清车的颜色」，主动向机主提议一句「要我调快照复核吗？」——机主同意后 `ha_parking with_image=true` 落盘快照，再 `GET /img/<回复里的文件名>` 取图目视确认。
 - 无参数即可用；只有要自己看图复核时才传 `with_image=true`：会把当前快照落盘 `generated/cam_时间戳.jpg` 并在回复里给文件名，再用 `GET <网关地址去掉/mcp>/img/cam_xxx.jpg`（同一把密钥）取回图片。语音问答用不着传。
 - 这是车位专用工具，不是通用摄像头工具：想看摄像头画面或家里其他摄像头，不要路由到它（camera 域不在可见白名单，这是唯一的窄例外）。
-- 标定与参考图在 `calibration/parking.json`（机主重标 = 换参考图 + 改 JSON，即时生效，不用重启；结果有 60 秒缓存，改完最多等 1 分钟）。
+- 标定与参考图在 `calibration/parking.json`（机主重标 = 换参考图 + 改 JSON，即时生效，不用重启；结果有 60 秒缓存，改完最多等 1 分钟）。参考帧按时段槽位选取：`day_am`[6,11) / `day`[11,14) / `day_pm`[14,19) / `night`，槽位缺图自动回落 `day`。
+
+**跑步机查询（2026-10-18 新增，Keep KR1 Pro）**：`ha_treadmill` 无参数，一句话报在不在跑 + 速度/已跑距离/时长；数据约 2 分钟没更新会注明。空闲时速度距离时长读不到属正常（无运动中会话），不是故障。**只读工具**：BLE 只有读数没有下发通道，启动/调速控制不了（那在 Keep App）——用户说「帮我开跑步机/调速度」时如实说控制不了，别硬路由。这是跑步机专用查询，查车位走 ha_parking，别混。
 
 ## 生图与图片回传
 
