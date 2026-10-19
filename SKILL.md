@@ -1,6 +1,6 @@
 ---
 name: mac-tools-gateway
-description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服务），用 MCP 工具控制那台 Mac：开应用、开斗鱼/虎牙/B站这类视频网站、点网易云音乐、检索打开 Obsidian 知识库、语音记事进 Obsidian 日记、控制 Home Assistant 智能家、AI 生图（文生图/图生图）。适用场景是拿到网关 URL 和密钥后完成 MCP 客户端配置并验证连通。
+description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服务），用 MCP 工具控制 Mac、路由 Mac 与小爱音箱的网易云音乐、检索打开 Obsidian 知识库、语音记事、控制 Home Assistant 智能家和 AI 生图。适用于配置网关并按目标设备选择音乐工具。
 ---
 
 # Mac 工具网关接入
@@ -20,7 +20,7 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
    - 密钥是机密：不要写进会提交的文件、不要在对话里复述全文
 3. **验证连通**：连接后调用一次 `now_playing`，能返回那台 Mac 的播放状态即接入成功。
 
-## 工具清单（30 个）
+## 工具清单（31 个）
 
 | 工具 | 作用 | 调用要点 |
 |---|---|---|
@@ -31,19 +31,23 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 | `open_obsidian_search` | 打开 Obsidian 搜索面板 | 让用户自己挑结果时用 |
 | `save_voice_note` | 把一段话记进 Obsidian 日记：追加 `- HH:MM 时间戳行` 到 Jggknowledge 仓库 `日记/当天日期.md`，可选附录音嵌入 | text 必填（口述正文）；audio_file 可选，传已存进 收件箱/Ios录音 的 m4a 文件名（如 20260913_175210.m4a），日记里会附 `![[文件名]]` 录音嵌入。机主说"记个日记/记一下/语音记事"时调用；Mac 快捷指令「记录日记 esp」走的就是这个工具 |
 | `open_my_github_repositories` | 浏览器打开机主的 GitHub 仓库列表 | — |
-| `play_song` | 点歌播放 | `song_name` 必填，提到歌手就传 `artist`（选曲更准）；周杰伦等版权不在网易云，找不到原唱要如实说 |
-| `play_liked_music` | 播放"我喜欢的音乐"歌单 | 无参数 |
-| `music_play_pause` | 暂停/继续 | **必须传 action**：`"pause"`/`"play"`，不确定才用默认 `"auto"`；返回话术是真实状态，不要脑补 |
-| `music_next` / `music_previous` | 切歌 | 返回里带当前曲目与播放状态 |
-| `now_playing` | 查正在播放的歌 | 用户问"放的什么歌"时先调它，别猜 |
+| `play_song` | 在 Mac 网易云点歌播放 | `song_name` 必填，提到歌手就传 `artist`（选曲更准）；找不到指定版本如实说明 |
+| `play_liked_music` | 在 Mac 顺序播放"我喜欢的音乐"歌单 | 无参数 |
+| `music_play_pause` | 暂停/继续 Mac 网易云 | Mac 目标已确定后传 action：`"pause"`/`"play"`；目标不明先澄清，`"auto"` 仅用于明确要切换 Mac 播放状态时 |
+| `music_next` / `music_previous` | 在 Mac 网易云切歌 | Mac 目标已确定后使用，返回当前曲目与播放状态 |
+| `now_playing` | 查 Mac 网易云正在播放的歌 | 仅查询已确定的 Mac 目标；小爱曲目走 `ha_xiaoai_music(action="status")` |
 | `generate_image` | AI 文生图（两步确认制，防误扣费）：只登记请求返回确认码，不扣费 | `prompt` 填具体画面描述；默认 3840x2160；**把结果给用户确认后**用 `confirm_image` 执行；成功返回保存路径/尺寸/耗时/相册地址/**相册访问密码**；用 `GET <网关>/img/<文件名>`（同一密钥）取回图片字节 |
 | `edit_image` | AI 图生图（两步确认制）：以参考图为底按描述改图，登记同上 | `image_path` 填那台 Mac 上的图片路径——远端先用 `POST <网关>/upload` 上传手机图（Bearer 密钥，body 为原始图片字节），或用已生成图（如 `xiaozhi-mcp/generated/img_xxx.png`）串"生成→改图"链路 |
 | `confirm_image` | 持确认码实际执行待确认的生图/改图 | 只在用户明确确认后调用（这一步才计费）；确认码 2 分钟有效、单次；每日实际生成上限 10 次（IMAGE_DAILY_LIMIT 可调） |
 | `list_images` | 列相册现有图（生成+上传），按时间倒序 | "看看相册里有什么图/刚传的图叫什么"先调它；拿到 `generated/<文件名>` 直接当 `edit_image` 的 `image_path` |
 
-## Home Assistant 工具（13 个 `ha_*`）
+**网易云目标路由**：明确设备优先，同一对话沿用最近明确的播放目标；无上下文的新播放默认 Mac。控制或曲目查询目标不明时先问“Mac 还是小爱音箱？”。小爱目标使用 `ha_xiaoai_music`，请求失败只报告失败，不回退到 Mac；小爱上下文的下一首/上一首尚不支持，不调用 Mac 切歌。Mac 的 `play_liked_music` 是顺序歌单，小爱的 `liked` 是最多 5 首的随机连播。
 
-`ha_list_devices` / `ha_light` / `ha_switch` / `ha_cover` / `ha_climate` / `ha_media_player` / `ha_where_is` / `ha_parking` / `ha_treadmill` / `ha_activate_scene` / `ha_run_script` / `ha_get_state` / `ha_call_service`——逐个工具的语义与话术见机主仓库 `xiaozhi-mcp/README.md` 的 homeassistant_tools 一节。控制的是真实家居设备，用户明确要求才调用。
+## Home Assistant 工具（14 个 `ha_*`）
+
+`ha_list_devices` / `ha_light` / `ha_switch` / `ha_cover` / `ha_climate` / `ha_media_player` / `ha_xiaoai_music` / `ha_where_is` / `ha_parking` / `ha_treadmill` / `ha_activate_scene` / `ha_run_script` / `ha_get_state` / `ha_call_service`——逐个工具的语义与话术见机主仓库 `xiaozhi-mcp/README.md` 的 homeassistant_tools 一节。控制的是真实家居设备，用户明确要求才调用。
+
+**小爱网易云**：`ha_xiaoai_music(action, song_name="", artist="")` 的 action 限定为 `song` / `liked` / `pause` / `resume` / `status`。`liked` 从喜欢列表随机连播最多 5 首，不是 Mac 的顺序歌单；控制工具只确认请求已提交，不据此声称已经开始播放；`status` 是约 15 秒采样的状态快照。
 
 **ha_climate 2026-10-02 升级（格力红外空调）**：action 支持 on（开机）/ off（关机）/ mode（切模式）/ fan（调风速）。
 - action=mode 配 `hvac_mode=cool/heat/dry/fan_only/auto`（中文「制冷/制热/除湿/送风/自动」也直接收，off 等于关机）
