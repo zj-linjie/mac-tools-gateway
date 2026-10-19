@@ -47,7 +47,7 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 
 `ha_list_devices` / `ha_light` / `ha_switch` / `ha_cover` / `ha_climate` / `ha_media_player` / `ha_xiaoai_music` / `ha_where_is` / `ha_parking` / `ha_treadmill` / `ha_activate_scene` / `ha_run_script` / `ha_get_state` / `ha_call_service`——逐个工具的语义与话术见机主仓库 `xiaozhi-mcp/README.md` 的 homeassistant_tools 一节。控制的是真实家居设备，用户明确要求才调用。
 
-**小爱网易云**：`ha_xiaoai_music(action, song_name="", artist="")` 的 action 限定为 `song` / `liked` / `pause` / `resume` / `status`。`liked` 从喜欢列表随机连播最多 5 首，不是 Mac 的顺序歌单；控制工具只确认请求已提交，不据此声称已经开始播放；`status` 是约 15 秒采样的状态快照。
+**小爱网易云**：`ha_xiaoai_music(action, song_name="", artist="")` 的 action 限定为 `song` / `liked` / `pause` / `resume` / `status`。`liked` 从喜欢列表随机连播最多 5 首，不是 Mac 的顺序歌单。点歌/喜欢随机提交后等约 5 秒，按 HA 最近 30 秒内且歌名匹配的结果答复播放、被拒原因或失败；结果过期/读不到才答已提交。暂停/继续仍只确认请求已发送；`status` 为约 15 秒采样快照，并附最近 5 分钟内的点歌拒绝原因。
 
 **ha_climate 2026-10-02 升级（格力红外空调）**：action 支持 on（开机）/ off（关机）/ mode（切模式）/ fan（调风速）。
 - action=mode 配 `hvac_mode=cool/heat/dry/fan_only/auto`（中文「制冷/制热/除湿/送风/自动」也直接收，off 等于关机）
