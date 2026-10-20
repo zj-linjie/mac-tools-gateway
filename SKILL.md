@@ -20,7 +20,7 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
    - 密钥是机密：不要写进会提交的文件、不要在对话里复述全文
 3. **验证连通**：连接后调用一次 `now_playing`，能返回那台 Mac 的播放状态即接入成功。
 
-## 工具清单（31 个）
+## 工具清单（35 个）
 
 | 工具 | 作用 | 调用要点 |
 |---|---|---|
@@ -43,9 +43,9 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 
 **网易云目标路由**：明确设备优先，同一对话沿用最近明确的播放目标；无上下文的新播放默认 Mac。控制或曲目查询目标不明时先问“Mac 还是小爱音箱？”。小爱目标使用 `ha_xiaoai_music`，请求失败只报告失败，不回退到 Mac；小爱上下文的下一首/上一首尚不支持，不调用 Mac 切歌。Mac 的 `play_liked_music` 是顺序歌单，小爱的 `liked` 是最多 5 首的随机连播。
 
-## Home Assistant 工具（14 个 `ha_*`）
+## Home Assistant 工具（18 个 `ha_*`）
 
-`ha_list_devices` / `ha_light` / `ha_switch` / `ha_cover` / `ha_climate` / `ha_media_player` / `ha_xiaoai_music` / `ha_where_is` / `ha_parking` / `ha_treadmill` / `ha_activate_scene` / `ha_run_script` / `ha_get_state` / `ha_call_service`——逐个工具的语义与话术见机主仓库 `xiaozhi-mcp/README.md` 的 homeassistant_tools 一节。控制的是真实家居设备，用户明确要求才调用。
+`ha_list_devices` / `ha_light` / `ha_switch` / `ha_cover` / `ha_climate` / `ha_media_player` / `ha_xiaoai_music` / `ha_where_is` / `ha_parking` / `ha_treadmill` / `ha_briefing_reader` / `ha_speak_text` / `ha_briefing_reader_stop` / `ha_briefing_reader_status` / `ha_activate_scene` / `ha_run_script` / `ha_get_state` / `ha_call_service`——逐个工具的语义与话术见机主仓库 `xiaozhi-mcp/README.md` 的 homeassistant_tools 一节。控制的是真实家居设备，用户明确要求才调用。
 
 **小爱网易云**：`ha_xiaoai_music(action, song_name="", artist="")` 的 action 限定为 `song` / `liked` / `pause` / `resume` / `status`。`liked` 从喜欢列表随机连播最多 5 首，不是 Mac 的顺序歌单。点歌/喜欢随机提交后等约 5 秒，按 HA 最近 30 秒内且歌名匹配的结果答复播放、被拒原因或失败；结果过期/读不到才答已提交。暂停/继续仍只确认请求已发送；`status` 为约 15 秒采样快照，并附最近 5 分钟内的点歌拒绝原因。
 
@@ -64,6 +64,13 @@ description: 接入 zj-linjie 的 Mac 工具网关（带密钥的公网 MCP 服�
 - 标定与参考图在 `calibration/parking.json`（机主重标 = 换参考图 + 改 JSON，即时生效，不用重启；结果有 60 秒缓存，改完最多等 1 分钟）。参考帧按时段槽位选取：`day_am`[6,11) / `day`[11,14) / `day_pm`[14,19) / `night`，槽位缺图自动回落 `day`。
 
 **跑步机查询（2026-10-18 新增，Keep KR1 Pro）**：`ha_treadmill` 无参数，一句话报在不在跑 + 速度/已跑距离/时长；数据约 2 分钟没更新会注明。空闲时速度距离时长读不到属正常（无运动中会话），不是故障。**只读工具**：BLE 只有读数没有下发通道，启动/调速控制不了（那在 Keep App）——用户说「帮我开跑步机/调速度」时如实说控制不了，别硬路由。这是跑步机专用查询，查车位走 ha_parking，别混。
+
+**AIHOT 简报与晓晓文字（2026-10-20 新增）**：音频由 Home Assistant 合成，经已配置的 L05C 播放。这不是小智设备自己出声。用户没明确要求不要调用。
+- `ha_briefing_reader(action, date="")`：`action` 只能是 `preview` 或 `play`。源固定 `aihot_daily`。`date` 空则按 Asia/Shanghai 今天；传入必须是真实的 `YYYY-MM-DD`。`preview` 只校验稿件，不播放；`play` 把播放交给 HA。返回里的 accepted 只表示 HA 接受了调用，不是播完。
+- `ha_speak_text(text)`：晓晓朗读。先去掉首尾空白，再要求 1–1000 个 Unicode 码点；内部换行和标点保留。返回只有 accepted 和 kind，不回显原文，也不表示已经念完。
+- `ha_briefing_reader_status()`：查当前观察值，不要把它算成某一次调用已经完成。离开 reading/generating/playing 后，还要看 `last_run.result`：`completed` 才是播完；`mac_offline` 是 Mac 未开机，不能说简报或文字已播完。回复里没有简报全文，也没有用户原文。
+- `ha_briefing_reader_stop(kind)`：`kind` 必须是 `briefing` 或 `text`，每次都要传。它只能避免停错类型，不能区分同类型的不同一次调用（没有公开 task_id）。停止 text 会保留已排队的定时简报；停止 briefing 会清掉简报等待队列。
+- 状态已是 reading、generating 或 playing 时，新的 play / speak 会失败（busy）。不要改口说已经播完，也不要改用其它工具去取简报稿。
 
 ## 生图与图片回传
 
